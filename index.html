@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моя сборка модов Minecraft 1.21.5 Fabric</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; width: 100%; box-sizing: border-box; }
+        .header-wrap { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; flex-wrap: wrap; justify-content: center; }
+        h1 { color: #52a447; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); margin: 0; text-align: center; }
+        .subtitle { color: #aaa; margin-bottom: 30px; font-size: 1.1rem; }
+
+        .tg-btn { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #2AABEE, #229ED9); border: none; cursor: pointer; color: #fff; box-shadow: 0 3px 10px rgba(42, 171, 238, 0.4); transition: transform 0.2s, box-shadow 0.2s; padding: 0; }
+        .tg-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(42, 171, 238, 0.6); }
+        .tg-btn svg { width: 22px; height: 22px; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(3px); }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: #1e1e1e; border: 2px solid #333; border-radius: 14px; padding: 28px 26px 24px; max-width: 420px; width: 100%; position: relative; box-shadow: 0 15px 40px rgba(0,0,0,0.7); animation: modalIn 0.2s ease; box-sizing: border-box; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: #888; font-size: 26px; cursor: pointer; line-height: 1; padding: 4px 8px; transition: color 0.2s; }
+        .modal-close:hover { color: #fff; }
+        .modal-title { font-size: 1.25rem; font-weight: bold; color: #fff; margin-bottom: 12px; padding-right: 20px; }
+        .modal-text { color: #ccc; font-size: 0.95rem; line-height: 1.5; margin: 0 0 20px; }
+        .modal-btn { display: block; width: 100%; padding: 12px; background: linear-gradient(135deg, #2AABEE, #229ED9); color: #fff; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; transition: opacity 0.2s; box-sizing: border-box; }
+        .modal-btn:hover { opacity: 0.9; }
+
+        .mods-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 25px; width: 100%; max-width: 1400px; padding: 10px; box-sizing: border-box; }
+        .mod-card { background-color: #1e1e1e; border: 2px solid #333; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); transition: transform 0.3s ease, border-color 0.3s ease; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+        .mod-card:hover { transform: translateY(-5px); border-color: #52a447; }
+        .mod-info { padding: 20px; display: flex; flex-direction: column; flex: 1; box-sizing: border-box; }
+        .mod-title { font-size: 1.3rem; font-weight: bold; margin: 0 0 10px 0; color: #fff; }
+        .mod-version { font-size: 0.85rem; color: #64b5f6; background-color: #1a237e; padding: 4px 8px; border-radius: 6px; align-self: flex-start; margin-bottom: 12px; font-weight: bold; }
+        .mod-description { font-size: 0.95rem; color: #ccc; line-height: 1.4; margin: 0 0 20px 0; }
+        .download-links { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+        .btn { display: flex; align-items: center; justify-content: center; padding: 10px; border-radius: 6px; font-weight: bold; text-decoration: none; color: #fff; font-size: 0.9rem; transition: opacity 0.2s ease; }
+        .btn:hover { opacity: 0.9; }
+        .btn-m { background-color: #1bd96a; color: #000; }
+        .btn-c { background-color: #ff5a00; }
+        .btn-i { background-color: #4a76a8; }
+    </style>
+</head>
+<body>
+
+    <div class="header-wrap">
+        <h1>Моя сборка модов Minecraft</h1>
+        <button class="tg-btn" type="button" aria-label="Написать в Telegram" onclick="document.getElementById('tg-modal').classList.add('active')">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
+            </svg>
+        </button>
+    </div>
+    <div class="subtitle">Версия: 1.21.5 / Fabric</div>
+
+    <!-- Модальное окно -->
+    <div id="tg-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('active')">
+        <div class="modal-box">
+            <button class="modal-close" type="button" aria-label="Закрыть" onclick="document.getElementById('tg-modal').classList.remove('active')">×</button>
+            <div class="modal-title">Нашли ошибку?</div>
+            <p class="modal-text">Если заметили неработающую ссылку, опечатку в описании мода или другой баг на этой странице — сообщите об этом в Telegram. Постараемся всё исправить как можно скорее.</p>
+            <a href="https://t.me/MrDidimasik" target="_blank" rel="noopener noreferrer" class="modal-btn">Сообщить об ошибке</a>
+        </div>
+    </div>
+
+    <div class="mods-grid">
+
+        <!-- 1. AppleSkin -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">AppleSkin</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Показывает насыщение еды и потенциальное восстановление здоровья/голода прямо в интерфейсе.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/appleskin" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/appleskin" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/55336-appleskin.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. BetterF3 -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">BetterF3</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Делает стандартный экран отладки (F3) настраиваемым, цветным и более читаемым.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/betterf3" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/betterf3" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/147727-betterf3.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Bobby -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Bobby</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Позволяет устанавливать дальность прорисовки в мультиплеере выше, чем ограничено сервером, запоминая чанки.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/bobby" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/bobby" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/155491-bobby.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Chat Heads -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Chat Heads</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Отображает маленькие иконки голов игроков перед их сообщениями в игровом чате.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/chat-heads" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/chat-heads" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/139247-chat-heads.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Chunky -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Chunky</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Инструмент для предварительной генерации чанков мира, что снижает лаги во время активного бега или полетов.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/chunky" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/chunky-pregenerator" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Dynamic FPS -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Dynamic FPS</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Снижает частоту кадров (FPS), когда игра свернута или не в фокусе, сохраняя ресурсы твоего ПК.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/dynamic-fps" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/dynamic-fps" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/106352-dynamic-fps.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Effect Timer Plus -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Effect Timer Plus</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Улучшает отображение активных эффектов зелий, добавляя точные таймеры и наглядный дизайн.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/effect-timer-plus" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/effect-timer-plus" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/177499-effect-timer-plus.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Emotecraft -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Emotecraft</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Позволяет твоему персонажу проигрывать различные анимации эмоций (танцы, приветствия) в мультиплеере.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/emotecraft" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/emotecraft" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/150286-emotecraft.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. Entity Culling -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Entity Culling</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Оптимизирует производительность, переставая рендерить мобов и блоки сквозь стены, которые ты не видишь.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/entityculling" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/entityculling" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/185361-entity-culling.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 12. Falling Leaves -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Falling Leaves</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Атмосферный мод, добавляющий красивые падающие листочки с крон деревьев.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/fallingleaves" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/falling-leaves-fabric" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/140700-falling-leaves.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 13. FerriteCore -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">FerriteCore</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Серьезно оптимизирует потребление оперативной памяти (RAM) игрой, сжимая данные моделей.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/ferrite-core" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/ferritecore-fabric" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/152816-ferritecore.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 14. Hold My Items (HMI) -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Hold My Items (HMI)</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Делает руки персонажа видимыми от первого лица, позволяя реалистично удерживать предметы с уникальными анимациями.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/hold-my-items" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/hold-my-items" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/184552-hold-my-items-reforged.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 15. ImmediatelyFast -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">ImmediatelyFast</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Повышает FPS за счет оптимизации отрисовки шрифтов, карт, текста, чата и плоских GUI-элементов.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/immediatelyfast" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/immediatelyfast" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/185508-immediatelyfast.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 16. Iris Shaders -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Iris Shaders</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Добавляет полноценную и очень производительную поддержку красивых шейдеров в связке с Sodium.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/iris" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/irisshaders" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/149349-iris-shaders.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 17. LambDynamicLights -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">LambDynamicLights</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Реализует динамическое освещение: факелы и лава освещают мир прямо у тебя в руках.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/lambdynamiclights" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/lambdynamiclights" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 18. Lithium -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Lithium</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Масштабная оптимизация физики, ИИ мобов и механик мира. Заметно ускоряет игру.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/lithium" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/lithium" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/136978-lithium.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 19. Mod Menu -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Mod Menu</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Добавляет в главное меню удобный список со всеми установленными модами и возможностью их настройки.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/modmenu" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/modmenu" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/96050-mod-menu.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 20. Not Enough Animations -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Not Enough Animations</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Добавляет новые анимации от первого и третьего лица: поедание еды, чтение карт.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/not-enough-animations" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/not-enough-animations" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 21. Presence Footsteps -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Presence Footsteps</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Полная переработка звуков шагов: звук зависит от блока, обуви и типа движения.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/presence-footsteps" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/presence-footsteps" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/10459-presence-footsteps-mod.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 22. Replay Mod -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Replay Mod</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Позволяет записывать твою игру, а затем пересматривать записи под любым углом для создания видео.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/replaymod" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/replay-mod-fabric-and-forge" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/89678-replaymod.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 23. Shulker Box Tooltip -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Shulker Box Tooltip</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Позволяет заглядывать внутрь шалкеровых ящиков при наведении мыши прямо в инвентаре.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/shulkerboxtooltip" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/shulker-box-tooltip" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/95887-shulkerboxtooltip.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 24. Skin Layers 3D -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Skin Layers 3D</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Делает второй (верхний) слой твоего скина объемным и трехмерным вместо стандартного плоского отображения.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/3dskinlayers" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/skin-layers-3d" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 25. SmoothBoot -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">SmoothBoot</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Оптимизирует распределение потоков процессора при запуске игры, ускоряя загрузку главного меню.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/smoothboot-fabric" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/smooth-boot" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 26. Sodium Extra -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Sodium Extra</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Расширяет меню настроек графики Sodium, добавляя переключатели частиц, анимаций и деталей.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/sodium-extra" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/sodium-extra" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/177989-sodium-extra.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 27. Sodium -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Sodium</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Самый мощный и незаменимый мод на оптимизацию движка рендеринга чанков. Радикально повышает FPS.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/sodium" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/sodium" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/137408-sodium.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 28. Vivecraft -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Vivecraft</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Модификация, которая превращает Майнкрафт в полноценную игру для шлемов виртуальной реальности (VR).</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/vivecraft" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/vivecraft" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 29. Simple Voice Chat -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Simple Voice Chat</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Добавляет качественный позиционный голосовой чат прямо в игру для общения с друзьями неподалеку.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/simple-voice-chat" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/simple-voice-chat" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/185344-simple-voice-chat.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 30. Xaero's Minimap -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Xaero's Minimap</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Удобная настраиваемая мини-карта в углу экрана с отображением мобов, пещер и точек смерти.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/xaeros-minimap" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/xaeros-minimap" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/310-xaeros-minimap-mod.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 31. Xaero's World Map -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Xaero's World Map</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Полноэкранная интерактивная карта мира, которая плавно открывается по кнопке и сохраняет исследованные места.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/xaeros-world-map" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/xaeros-world-map" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                    <a href="https://minecraft-inside.ru/mods/41658-xaeros-world-map.html" target="_blank" rel="noopener noreferrer" class="btn btn-i">Minecraft Inside</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 32. Yet Another Config Lib -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Yet Another Config Lib</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Вспомогательная библиотека интерфейсов, необходимая для работы меню настроек Sodium и других модов.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/yacl" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/yacl" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 33. Zoomify -->
+        <div class="mod-card">
+            <div class="mod-info">
+                <div class="mod-title">Zoomify</div>
+                <div class="mod-version">1.21.5 / Fabric</div>
+                <p class="mod-description">Добавляет очень плавное и настраиваемое приближение камеры (зум) по нажатию горячей клавиши.</p>
+                <div class="download-links">
+                    <a href="https://modrinth.com/mod/zoomify" target="_blank" rel="noopener noreferrer" class="btn btn-m">Modrinth</a>
+                    <a href="https://www.curseforge.com/minecraft/mc-mods/zoomify" target="_blank" rel="noopener noreferrer" class="btn btn-c">CurseForge</a>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- Конец сетки mods-grid -->
+
+</body>
+</html>
